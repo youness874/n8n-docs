@@ -9,13 +9,21 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": ["electron", "openai", "realtime", "voice", "desktop-assistant", "ai-companion"],
+  "keywords": [
+    "electron",
+    "openai",
+    "realtime",
+    "voice",
+    "desktop-assistant",
+    "ai-companion"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^17.4.2",
     "lucide-react": "^1.22.0",
     "mermaid": "^11.16.0",
+    "playwright-core": "^1.61.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
