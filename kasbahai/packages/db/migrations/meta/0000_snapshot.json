@@ -1,5 +1,5 @@
 {
-  "id": "663c9029-6e08-45d9-ae19-ee36796bec44",
+  "id": "54498002-d72b-448a-bd0f-92168ee50ad2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1105,6 +1105,24 @@
           "columnsFrom": ["video_concept_id"],
           "columnsTo": ["id"],
           "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "master_videos_current_version_id_master_video_versions_id_fk": {
+          "name": "master_videos_current_version_id_master_video_versions_id_fk",
+          "tableFrom": "master_videos",
+          "tableTo": "master_video_versions",
+          "columnsFrom": ["current_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "master_videos_approved_version_id_master_video_versions_id_fk": {
+          "name": "master_videos_approved_version_id_master_video_versions_id_fk",
+          "tableFrom": "master_videos",
+          "tableTo": "master_video_versions",
+          "columnsFrom": ["approved_version_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

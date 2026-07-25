@@ -42,15 +42,16 @@ export default async function ProjectPage({ params }: { params: { projectId: str
         Audience: {project.targetAudience} · Tone: {project.tone} · Language: {project.language}
       </p>
 
-      {!latestTranscript ? (
-        <TranscriptForm projectId={project.id} />
-      ) : (
+      {latestTranscript && (
         <TranscriptStatus
           status={latestTranscript.status}
           qualityScore={latestTranscript.qualityScore}
           segmentCount={segments.length}
           segments={segments}
         />
+      )}
+      {(!latestTranscript || latestTranscript.status === 'failed') && (
+        <TranscriptForm projectId={project.id} />
       )}
     </section>
   );
@@ -121,6 +122,7 @@ function TranscriptStatus({
         {status === 'ready' && <> · {segmentCount} segments</>}
       </p>
       {status === 'processing' && <p>Segmenting transcript…</p>}
+      {status === 'failed' && <p>Segmentation failed. Submit a transcript to try again.</p>}
       {segments.map((segment) => (
         <div key={segment.index} className="segment">
           <div>

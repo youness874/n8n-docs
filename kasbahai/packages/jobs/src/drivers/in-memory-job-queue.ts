@@ -2,13 +2,18 @@ import { randomUUID } from 'node:crypto';
 import type { EnqueueOptions, JobHandler, JobQueue, JobRecord } from '../types';
 
 /**
- * Runs each enqueued job on the microtask queue, one at a time per call to
- * enqueue. Good enough for local development and for tests that want a
- * real async handoff without standing up a broker.
+ * Runs each enqueued job on the microtask queue, decoupled from the
+ * caller's call stack — enqueue() returns as soon as the job is recorded,
+ * never waiting for the handler. This matters for callers like a Next.js
+ * server action: the request should return once work is queued, not block
+ * for however long the handler takes. Good enough for local development
+ * and tests; a durable driver (pg-boss, BullMQ, ...) implements the same
+ * JobQueue interface for production.
  */
 export class InMemoryJobQueue implements JobQueue {
   private readonly handlers = new Map<string, JobHandler<unknown>>();
   private readonly jobs = new Map<string, JobRecord>();
+  private readonly completions = new Map<string, Promise<void>>();
 
   registerHandler<Payload>(jobType: string, handler: JobHandler<Payload>): void {
     this.handlers.set(jobType, handler as JobHandler<unknown>);
@@ -31,12 +36,29 @@ export class InMemoryJobQueue implements JobQueue {
     };
     this.jobs.set(jobId, record as JobRecord);
 
-    await this.run(record);
+    this.completions.set(
+      jobId,
+      new Promise<void>((resolve) => {
+        queueMicrotask(() => {
+          void this.run(record).then(resolve);
+        });
+      }),
+    );
 
     return { jobId };
   }
 
   getJob(jobId: string): JobRecord | undefined {
+    return this.jobs.get(jobId);
+  }
+
+  /**
+   * Not part of the JobQueue interface — a dev/test-only hook to await a
+   * specific job reaching a terminal status, since enqueue() itself no
+   * longer waits for it.
+   */
+  async waitFor(jobId: string): Promise<JobRecord | undefined> {
+    await this.completions.get(jobId);
     return this.jobs.get(jobId);
   }
 

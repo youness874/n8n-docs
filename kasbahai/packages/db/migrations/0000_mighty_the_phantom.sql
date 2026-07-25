@@ -459,6 +459,18 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "master_videos" ADD CONSTRAINT "master_videos_current_version_id_master_video_versions_id_fk" FOREIGN KEY ("current_version_id") REFERENCES "public"."master_video_versions"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "master_videos" ADD CONSTRAINT "master_videos_approved_version_id_master_video_versions_id_fk" FOREIGN KEY ("approved_version_id") REFERENCES "public"."master_video_versions"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "master_video_versions" ADD CONSTRAINT "master_video_versions_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;

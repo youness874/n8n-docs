@@ -37,40 +37,52 @@ export function getJobQueue(): JobQueue {
       .set({ status: 'processing' })
       .where(eq(schema.transcripts.id, transcript.id));
 
-    const processor = new DefaultSourceProcessor();
-    const result = await processor.process({
-      transcriptId: transcript.id,
-      rawText: transcript.rawText,
-      inputFormat: transcript.inputFormat,
-    });
+    try {
+      const processor = new DefaultSourceProcessor();
+      const result = await processor.process({
+        transcriptId: transcript.id,
+        rawText: transcript.rawText,
+        inputFormat: transcript.inputFormat,
+      });
 
-    if (result.segments.length > 0) {
-      await db.insert(schema.transcriptSegments).values(
-        result.segments.map((segment) => ({
-          workspaceId: transcript.workspaceId,
-          transcriptId: transcript.id,
-          index: segment.index,
-          sectionTitle: segment.sectionTitle,
-          speaker: segment.speaker,
-          text: segment.text,
-          startMs: segment.startMs,
-          endMs: segment.endMs,
-          isTopicChange: segment.isTopicChange,
-          isExample: segment.isExample,
-          isPromotional: segment.isPromotional,
-          isUnclear: segment.isUnclear,
-        })),
-      );
+      if (result.segments.length > 0) {
+        await db.insert(schema.transcriptSegments).values(
+          result.segments.map((segment) => ({
+            workspaceId: transcript.workspaceId,
+            transcriptId: transcript.id,
+            index: segment.index,
+            sectionTitle: segment.sectionTitle,
+            speaker: segment.speaker,
+            text: segment.text,
+            startMs: segment.startMs,
+            endMs: segment.endMs,
+            isTopicChange: segment.isTopicChange,
+            isExample: segment.isExample,
+            isPromotional: segment.isPromotional,
+            isUnclear: segment.isUnclear,
+          })),
+        );
+      }
+
+      await db
+        .update(schema.transcripts)
+        .set({
+          status: 'ready',
+          cleanText: result.cleanText,
+          qualityScore: result.qualityScore,
+        })
+        .where(eq(schema.transcripts.id, transcript.id));
+    } catch (error) {
+      // Leaving the transcript at 'processing' forever would strand the
+      // project: the UI hides the submission form once any transcript
+      // exists, so there would be no way to retry. Mark it failed and
+      // rethrow so the job record itself also reflects the failure.
+      await db
+        .update(schema.transcripts)
+        .set({ status: 'failed' })
+        .where(eq(schema.transcripts.id, transcript.id));
+      throw error;
     }
-
-    await db
-      .update(schema.transcripts)
-      .set({
-        status: 'ready',
-        cleanText: result.cleanText,
-        qualityScore: result.qualityScore,
-      })
-      .where(eq(schema.transcripts.id, transcript.id));
   });
 
   return instance;
