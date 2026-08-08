@@ -12,3 +12,6 @@ yarn.lock
 ## Ignore ephemeral doc-tool output
 output.csv
 _doctools/*.csv
+
+## Ignore rileyjarvis runtime data
+data/
